@@ -1,24 +1,24 @@
-import React from 'react';
-import logo from './logo.svg';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 
 function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [requestId, setRequestId] = useState<number>(0);
+
+  const data = useMemo(() => {
+    return Array.from({ length: 9 }, () =>
+      Array.from({ length: 18 }, () => Math.floor(Math.random() * 8.9) + 1)
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d') as CanvasRenderingContext2D;
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <canvas ref={canvasRef} className='canvas' width={1000} height={500} />
     </div>
   );
 }
