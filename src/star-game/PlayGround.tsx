@@ -16,7 +16,11 @@ export interface Data {
   removedBy: null | string;
 }
 
-export default function PlayGround() {
+export interface PlayGroundProps {
+  onCorrect?: (count: number) => void;
+}
+
+export default function PlayGround({ onCorrect }: PlayGroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [requestId, setRequestId] = useState<number>(0);
 
@@ -126,6 +130,8 @@ export default function PlayGround() {
             data[i][j].removedBy = 'PLAYER_1';
           }
         }
+
+        if (onCorrect) onCorrect(count);
       }
 
       setDataSelected(false);
