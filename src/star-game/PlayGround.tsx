@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  PLAY_GROUND_HEIGHT,
+  CANVAS_WIDTH,
+  ITEM_HEIGHT,
+  ITEM_WIDTH,
+  STAR_HEIGHT,
+  STAR_MARGIN,
+  STAR_WIDTH,
+} from './constants';
 
-const CANVAS_WIDTH = 900;
-const CANVAS_HEIGHT = 450;
-const ITEM_WIDTH = 50;
-const ITEM_HEIGHT = 50;
-const STAR_WIDTH = 40;
-const STAR_HEIGHT = 40;
-const STAR_MARGIN = 5;
-
-interface Data {
+export interface Data {
   value: number;
   isSelected: boolean;
   isRemoved: boolean;
@@ -50,7 +51,7 @@ export default function PlayGround() {
     imageStar.addEventListener('load', draw);
 
     function draw() {
-      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      ctx.clearRect(0, 0, CANVAS_WIDTH, PLAY_GROUND_HEIGHT);
       ctx.fillStyle = 'black';
       ctx.font = '22px Passion One';
       for (let i = 0; i < data.length; i++) {
@@ -173,9 +174,9 @@ export default function PlayGround() {
   return (
     <canvas
       ref={canvasRef}
-      className='canvas'
+      className='playground'
       width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
+      height={PLAY_GROUND_HEIGHT}
     />
   );
 }

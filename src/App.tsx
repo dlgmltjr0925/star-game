@@ -1,8 +1,8 @@
 import './App.css';
-import PlayGround from './play-ground';
+import StarGame from './star-game';
 
 function App() {
-  return <PlayGround />;
+  return <StarGame />;
 }
 
 export default App;
