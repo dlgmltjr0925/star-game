@@ -6,3 +6,4 @@ export const ITEM_HEIGHT = 50;
 export const STAR_WIDTH = 40;
 export const STAR_HEIGHT = 40;
 export const STAR_MARGIN = 5;
+export const PLAY_TIME = 120;

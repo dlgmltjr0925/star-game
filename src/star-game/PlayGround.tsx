@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   PLAY_GROUND_HEIGHT,
   CANVAS_WIDTH,
@@ -7,6 +7,7 @@ import {
   STAR_HEIGHT,
   STAR_MARGIN,
   STAR_WIDTH,
+  PLAY_TIME,
 } from './constants';
 
 export interface Data {
@@ -17,12 +18,17 @@ export interface Data {
 }
 
 export interface PlayGroundProps {
-  onCorrect?: (count: number) => void;
+  startedAt: Date;
+  onCorrect?: (score: number) => void;
+  onClickRefresh?: () => void;
 }
 
-export default function PlayGround({ onCorrect }: PlayGroundProps) {
+export default function PlayGround({
+  startedAt,
+  onCorrect,
+  onClickRefresh,
+}: PlayGroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [requestId, setRequestId] = useState<number>(0);
 
   const data = useMemo<Data[][]>(() => {
     return Array.from({ length: 9 }, () =>
@@ -34,13 +40,14 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
       }))
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestId]);
+  }, [startedAt]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d') as CanvasRenderingContext2D;
 
     let isDragging = false;
+    let isTimeOver = false;
     /**
      * start x
      * start y
@@ -49,10 +56,21 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
      */
     let dragPosition = [-1, -1, -1, -1];
     let selectedIndexes = [0, 0, 0, 0];
+    let score = 0;
+    const endTime = new Date(startedAt);
+    endTime.setSeconds(endTime.getSeconds() + PLAY_TIME);
+
+    const timeOverTimeout = setTimeout(() => {
+      isTimeOver = true;
+      draw();
+    }, PLAY_TIME * 1000);
 
     const imageStar = new Image();
     imageStar.src = './assets/images/star.png';
     imageStar.addEventListener('load', draw);
+
+    const imageRefresh = new Image();
+    imageRefresh.src = './assets/images/refresh.png';
 
     function draw() {
       ctx.clearRect(0, 0, CANVAS_WIDTH, PLAY_GROUND_HEIGHT);
@@ -72,21 +90,22 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
         }
       }
 
-      if (isDragging) {
+      if (isDragging && !isTimeOver) {
+        const [sx, sy, width, height] = dragPosition;
         ctx.fillStyle = '#fffa';
-        ctx.fillRect(
-          dragPosition[0],
-          dragPosition[1],
-          dragPosition[2],
-          dragPosition[3]
-        );
+        ctx.fillRect(sx, sy, width, height);
         ctx.strokeStyle = 'blue';
-        ctx.strokeRect(
-          dragPosition[0],
-          dragPosition[1],
-          dragPosition[2],
-          dragPosition[3]
-        );
+        ctx.strokeRect(sx, sy, width, height);
+      }
+
+      if (isTimeOver) {
+        ctx.fillStyle = '#fffe';
+        ctx.fillRect(300, 100, 300, 250);
+        ctx.fillStyle = 'black';
+        ctx.font = '40px Passion One';
+        ctx.fillText('Score', 410, 170);
+        ctx.fillText(`${score}`, 450 - `${score}`.length * 10, 220);
+        ctx.drawImage(imageRefresh, 430, 250, 40, 40);
       }
     }
 
@@ -101,6 +120,7 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
     }
 
     function handleMouseDown({ layerX, layerY }: any) {
+      if (isTimeOver) return;
       isDragging = true;
       dragPosition = [layerX, layerY, 0, 0];
     }
@@ -123,7 +143,7 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
         }
       }
 
-      if (sum === 10) {
+      if (sum === 10 && !isTimeOver) {
         for (let i = ly; i <= ry; i++) {
           for (let j = lx; j <= rx; j++) {
             data[i][j].isRemoved = true;
@@ -131,7 +151,9 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
           }
         }
 
-        if (onCorrect) onCorrect(count);
+        score += count;
+
+        if (onCorrect) onCorrect(score);
       }
 
       setDataSelected(false);
@@ -146,14 +168,13 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
 
       setDataSelected(false);
 
-      selectedIndexes[0] = Math.max(
-        Math.floor(Math.min(dragPosition[0], layerX) / ITEM_WIDTH),
-        0
+      selectedIndexes[0] = Math.floor(
+        Math.min(dragPosition[0], Math.max(layerX, 0)) / ITEM_WIDTH
       );
-      selectedIndexes[1] = Math.max(
-        Math.floor(Math.min(dragPosition[1], layerY) / ITEM_HEIGHT),
-        0
+      selectedIndexes[1] = Math.floor(
+        Math.min(dragPosition[1], Math.max(layerY, 0)) / ITEM_HEIGHT
       );
+
       selectedIndexes[2] = Math.floor(
         Math.max(dragPosition[0], layerX) / ITEM_WIDTH
       );
@@ -166,16 +187,37 @@ export default function PlayGround({ onCorrect }: PlayGroundProps) {
       draw();
     }
 
+    function handleClick({ layerX, layerY }: any) {
+      if (
+        isTimeOver &&
+        layerX > 425 &&
+        layerX < 475 &&
+        layerY > 245 &&
+        layerY < 295 &&
+        onClickRefresh
+      ) {
+        onClickRefresh();
+      }
+    }
+
     canvasRef.current.addEventListener('mousedown', handleMouseDown);
     canvasRef.current.addEventListener('mousemove', handleMouseMove);
+    canvasRef.current.addEventListener('click', handleClick);
     window.addEventListener('mouseup', handleMouseUp);
 
     return function () {
-      canvasRef.current?.removeEventListener('mousedown', handleMouseDown);
-      canvasRef.current?.removeEventListener('mousemove', handleMouseMove);
+      if (canvasRef.current) {
+        canvasRef.current.removeEventListener('mousedown', handleMouseDown);
+        canvasRef.current.removeEventListener('mousemove', handleMouseMove);
+        canvasRef.current.removeEventListener('click', handleClick);
+      }
       window.removeEventListener('mouseup', handleMouseUp);
+
+      if (timeOverTimeout) {
+        clearTimeout(timeOverTimeout);
+      }
     };
-  }, [data]);
+  }, [data, onClickRefresh, onCorrect, startedAt]);
 
   return (
     <canvas
